@@ -1,6 +1,6 @@
 import json
 import subprocess
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from enum import Enum
 
 from src import exceptions as exc
@@ -161,7 +161,7 @@ def _get_traffic_for_correct_period(
         if is_valid:
             return __sum_traffic(element), period
 
-    return None, period
+    return None, target_date - timedelta(days=1)
 
 
 @log
