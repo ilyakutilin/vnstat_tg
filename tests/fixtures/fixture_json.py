@@ -142,3 +142,11 @@ def mock_subprocess_run(mocker, simulated_vnstat_data):
         return mock_result
 
     mocker.patch("subprocess.run", side_effect=side_effect)
+
+
+@pytest.fixture
+def mock_failed_subprocess_run(mocker):
+    mock_result = Mock()
+    mock_result.returncode = 1
+
+    mocker.patch("subprocess.run", return_value=mock_result)
