@@ -13,16 +13,8 @@ locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
 
 @log
 def get_msg_for_service(vn_obj: VnStatData) -> str:
-    day_traffic = (
-        utils.bytes_to_gb(vn_obj.day_traffic)
-        if vn_obj.day_traffic
-        else "Данные отсутствуют"
-    )
-    month_traffic = (
-        utils.bytes_to_gb(vn_obj.month_traffic)
-        if vn_obj.month_traffic
-        else "Данные отсутствуют"
-    )
+    day_traffic = utils.bytes_to_gb(vn_obj.day_traffic)
+    month_traffic = utils.bytes_to_gb(vn_obj.month_traffic)
     return (
         f"<b>{vn_obj.name}</b>:\n"
         f"Yesterday, {vn_obj.day}: {day_traffic}\n"

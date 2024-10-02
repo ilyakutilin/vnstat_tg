@@ -23,7 +23,9 @@ def get_dict_value(dict_: dict, key: str):
 
 
 @log
-def bytes_to_gb(bytes_value: int) -> str:
+def bytes_to_gb(bytes_value: int | None) -> str:
+    if not bytes_value:
+        return "No data"
     gb_value = bytes_value / (1024**3)
     formatted_value = f"{gb_value:.1f}".rstrip("0").rstrip(".") + " GB"
     return formatted_value
