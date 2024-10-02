@@ -110,11 +110,21 @@ def get_month_dict(dm: DayMonth):
 
 
 @pytest.fixture(
-    params=[date(2024, 9, 12), date(2024, 9, 1), date(2024, 1, 1)],
-    ids=["general_case", "first_day_of_the_month", "first_day_of_the_year"],
+    params=[
+        (date(2024, 9, 12),),
+        (date(2024, 9, 1),),
+        (date(2024, 1, 1),),
+        (date(2024, 9, 12), date(2024, 9, 10)),
+    ],
+    ids=[
+        "general_case",
+        "first_day_of_the_month",
+        "first_day_of_the_year",
+        "missing_yesterday",
+    ],
 )
 def simulated_vnstat_data(request):
-    dm = DayMonth(request.param)
+    dm = DayMonth(*request.param)
     day_json = json.dumps(get_day_dict(dm))
     month_json = json.dumps(get_month_dict(dm))
     return (day_json, month_json)
