@@ -1,6 +1,9 @@
 import json
 from datetime import date, timedelta
 
+import pytest
+
+from src import exceptions as exc
 from src.vnstat import get_traffic_data
 
 
@@ -35,3 +38,9 @@ def test_parse_json(simulated_vnstat_data, mock_subprocess_run):
         else 7821185928 + 5401883104
     )
     assert traffic_data.month_traffic == target_month_traffic
+
+
+def test_json_parsing_fails(mock_failed_subprocess_run):
+    with pytest.raises(exc.FetchError) as excinfo:
+        get_traffic_data("test_service")
+    assert "Failed to fetch vnstat data" in str(excinfo.value)
