@@ -4,7 +4,7 @@ from datetime import date
 import paramiko
 from scp import SCPClient
 
-from src.logging import log
+from src.log import log
 from src.settings import settings
 from src.vnstat import VnStatData
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.exceptions import InternalKeyError
-from src.logging import configure_logging, log
+from src.log import configure_logging, log
 from src.settings import settings
 
 if TYPE_CHECKING:

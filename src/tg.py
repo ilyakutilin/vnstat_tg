@@ -5,7 +5,7 @@ import requests
 
 from src import exceptions as exc
 from src import utils
-from src.logging import configure_logging, log
+from src.log import configure_logging, log
 from src.settings import settings
 from src.vnstat import VnStatData
 
