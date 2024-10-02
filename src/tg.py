@@ -3,12 +3,15 @@ from http import HTTPStatus
 
 import requests
 
+from src import exceptions as exc
 from src import utils
-from src.logging import log
+from src.logging import configure_logging, log
 from src.settings import settings
 from src.vnstat import VnStatData
 
 locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
+
+logger = configure_logging(__name__)
 
 
 @log
@@ -55,10 +58,10 @@ def send_telegram_message(
     try:
         response = requests.post(url, json=payload)
         if response.status_code == HTTPStatus.OK:
-            print("Message sent successfully.")
+            logger.info("Message sent successfully.")
         else:
-            print(
+            logger.error(
                 f"Failed to send message. Status code: {response.status_code}"
             )
     except Exception as e:
-        print(f"Error sending Telegram message: {e}")
+        raise exc.TelegramError(f"Error sending Telegram message: {e}")
