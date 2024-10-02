@@ -1,6 +1,6 @@
 import json
 import subprocess
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from enum import Enum
 
 from src import exceptions as exc
@@ -14,6 +14,9 @@ logger = configure_logging(__name__)
 class Modifiers(Enum):
     day = "d"
     month = "m"
+
+    def __repr__(self):
+        return self.name
 
 
 class VnStatData:
@@ -31,15 +34,13 @@ class VnStatData:
         self.month = month
         self.month_traffic = month_traffic
 
-
-@log
-def __get_month_limit(date_: datetime = datetime.today()) -> int:
-    """Returns the limit of months to request from vnstat."""
-    todays_month = date_.month
-    tomorrows_month = (date_ + timedelta(days=1)).month
-    if tomorrows_month != todays_month:
-        return 2
-    return 1
+    def __repr__(self) -> str:
+        return (
+            f"<VnStatData(name={self.name}, day={self.day.isoformat()}, "
+            f"day_traffic={utils.bytes_to_gb(self.day_traffic)}, "
+            f"month={self.month['year']}-{self.month['month']}, "
+            f"month_traffic={utils.bytes_to_gb(self.month_traffic)})>"
+        )
 
 
 @log
@@ -160,7 +161,7 @@ def _get_traffic_for_correct_period(
         if is_valid:
             return __sum_traffic(element), period
 
-    return None, period
+    return None, target_date - timedelta(days=1)
 
 
 @log

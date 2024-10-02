@@ -4,8 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).parent
-ENV_FILE = BASE_DIR.parent / ".env"
+BASE_DIR = Path(__file__).parent.parent
+DATA_DIR = BASE_DIR / "data"
+ENV_FILE = BASE_DIR / ".env"
 
 
 load_dotenv(ENV_FILE)
@@ -23,11 +24,13 @@ class Settings:
     VPS_PORT = os.getenv("VPS_PORT", 22)
     VPS_USERNAME = os.getenv("VPS_USERNAME")
     VPS_JSON_FILE_PATH = os.getenv("VPS_JSON_FILE_PATH", "$HOME/vnstat.json")
-    LOCAL_FILE_PATH = os.getenv("LOCAL_FILE_PATH")
-    VPS_SSH_KEY_PATH = os.getenv("VPS_SSH_KEY_PATH")
+    LOCAL_FILE_NAME = DATA_DIR / os.getenv(
+        "LOCAL_FILE_PATH", "vnstat_remote.json"
+    )
+    VPS_SSH_KEY_PATH = os.getenv("VPS_SSH_KEY_PATH", "$HOME/.ssh/id_rsa")
 
-    LOG_DIR = BASE_DIR.parent / os.getenv("LOG_DIR", "logs")
-    LOG_FILE = os.getenv("LOG_FILE", "vnstat.log")
+    LOG_DIR = BASE_DIR / os.getenv("LOG_DIR", "logs")
+    LOG_FILE = LOG_DIR / os.getenv("LOG_FILE", "vnstat.log")
     LOG_FILE_SIZE = os.getenv("LOG_FILE_SIZE", 1 * 1024 * 1024)
     LOG_FILES_TO_KEEP = os.getenv("LOG_FILES_TO_KEEP", 5)
     LOG_FORMAT = os.getenv(

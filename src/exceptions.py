@@ -1,3 +1,8 @@
+from src.logging import configure_logging, log
+
+logger = configure_logging(__name__)
+
+
 class InternalError(Exception):
     pass
 
@@ -28,3 +33,19 @@ class NoDayOrMonthError(InternalError):
 
 class InvalidModifierError(InternalError):
     pass
+
+
+class TelegramError(InternalError):
+    pass
+
+
+@log
+def handle_exception(exception: Exception, re_raise: bool = False) -> None:
+    from src.tg import send_telegram_message
+
+    logger.exception(exception)
+    send_telegram_message(
+        f"An exception was raised in your vnstat monitor: {str(exception)}"
+    )
+    if re_raise:
+        raise exception

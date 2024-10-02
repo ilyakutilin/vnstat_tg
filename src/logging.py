@@ -42,6 +42,7 @@ def log(_func=None, *, my_logger: logging.Logger = None):
             )
             try:
                 result = func(*args, **kwargs)
+                logger.debug(f"function {func.__name__} returned {result}")
                 return result
             except Exception as e:
                 logger.exception(
