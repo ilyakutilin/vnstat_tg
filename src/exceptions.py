@@ -1,4 +1,3 @@
-from src import tg
 from src.logging import configure_logging, log
 
 logger = configure_logging(__name__)
@@ -42,8 +41,10 @@ class TelegramError(InternalError):
 
 @log
 def handle_exception(exception: Exception, re_raise: bool = False) -> None:
+    from src.tg import send_telegram_message
+
     logger.exception(exception)
-    tg.send_telegram_message(
+    send_telegram_message(
         f"An exception was raised in your vnstat monitor: {str(exception)}"
     )
     if re_raise:
