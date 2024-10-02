@@ -39,7 +39,7 @@ def _save_data_to_file(data: str, file_path: str):
 
 @log
 def save_vnstat_data_to_file(
-    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_FILE_PATH
+    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_FILE_NAME
 ):
     vn_dict = vnstat_data.__dict__
     vn_dict["day"] = vn_dict["day"].isoformat()

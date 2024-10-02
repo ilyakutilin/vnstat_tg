@@ -15,7 +15,7 @@ def get_remote_vnstat_sata(
     vps_port=settings.VPS_PORT,
     username=settings.VPS_USERNAME,
     json_file_path=settings.VPS_JSON_FILE_PATH,
-    local_file_path=settings.LOCAL_FILE_PATH,
+    local_file_path=settings.LOCAL_FILE_NAME,
     ssh_key_path=settings.VPS_SSH_KEY_PATH,
 ) -> VnStatData | None:
 
@@ -38,3 +38,7 @@ def get_remote_vnstat_sata(
     data_dict = json.loads(data)
     data_dict["day"] = date.fromisoformat(data_dict["day"])
     return VnStatData(**data_dict)
+
+
+if __name__ == "__main__":
+    print(get_remote_vnstat_sata())
