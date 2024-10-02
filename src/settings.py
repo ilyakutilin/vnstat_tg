@@ -21,7 +21,7 @@ class Settings:
     TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
     VPS_HOST = os.getenv("VPS_HOST")
-    VPS_PORT = os.getenv("VPS_PORT", 22)
+    VPS_PORT = int(os.getenv("VPS_PORT", 22))
     VPS_USERNAME = os.getenv("VPS_USERNAME")
     VPS_JSON_FILE_PATH = os.getenv("VPS_JSON_FILE_PATH", "$HOME/vnstat.json")
     LOCAL_FILE_NAME = DATA_DIR / os.getenv(
@@ -31,8 +31,8 @@ class Settings:
 
     LOG_DIR = BASE_DIR / os.getenv("LOG_DIR", "logs")
     LOG_FILE = LOG_DIR / os.getenv("LOG_FILE", "vnstat.log")
-    LOG_FILE_SIZE = os.getenv("LOG_FILE_SIZE", 1 * 1024 * 1024)
-    LOG_FILES_TO_KEEP = os.getenv("LOG_FILES_TO_KEEP", 5)
+    LOG_FILE_SIZE = int(os.getenv("LOG_FILE_SIZE", 1 * 1024 * 1024))
+    LOG_FILES_TO_KEEP = int(os.getenv("LOG_FILES_TO_KEEP", 5))
     LOG_FORMAT = os.getenv(
         "LOG_FORMAT", "%(asctime)s - %(levelname)s - %(message)s"
     )
