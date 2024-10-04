@@ -13,8 +13,8 @@ from src.vnstat import VnStatData
 
 @log
 def _connect_to_ssh(
-    vps_host: str,
-    vps_port: int,
+    remote_host: str,
+    remote_port: int,
     username: str,
     ssh_key_path: str | Path,
 ) -> paramiko.SSHClient | None:
@@ -25,11 +25,11 @@ def _connect_to_ssh(
 
         private_key = paramiko.Ed25519Key.from_path(ssh_key_path)
         ssh.connect(
-            vps_host, port=vps_port, username=username, pkey=private_key
+            remote_host, port=remote_port, username=username, pkey=private_key
         )
         return ssh
     except paramiko.SSHException as e:
-        raise exc.SSHError(f"Failed to SSH to {vps_host}: {e}")
+        raise exc.SSHError(f"Failed to SSH to {remote_host}: {e}")
 
 
 @log
@@ -67,18 +67,18 @@ def _get_vnstat_obj_from_json(file_data: str):
 
 @log
 def get_remote_vnstat_data(
-    vps_host: str = settings.VPS_HOST,
-    vps_port: int = settings.VPS_PORT,
-    username: str = settings.VPS_USERNAME,
-    json_file_path: str | Path = settings.VPS_JSON_FILE_PATH,
-    local_file_path: str | Path = settings.LOCAL_FILE_NAME,
-    ssh_key_path: str | Path = settings.VPS_SSH_KEY_PATH,
+    remote_host: str = settings.REMOTE_HOST,
+    remote_port: int = settings.REMOTE_PORT,
+    username: str = settings.REMOTE_USERNAME,
+    remote_json_file_path: str | Path = settings.REMOTE_JSON_FILE_PATH,
+    imported_json_file_path: str | Path = settings.IMPORTED_JSON_FILE_NAME,
+    ssh_key_path: str | Path = settings.SSH_KEY_PATH,
 ) -> VnStatData | None:
 
     try:
-        ssh = _connect_to_ssh(vps_host, vps_port, username, ssh_key_path)
-        _scp_remote_file(ssh, json_file_path, local_file_path)
-        file_data = _read_file(local_file_path)
+        ssh = _connect_to_ssh(remote_host, remote_port, username, ssh_key_path)
+        _scp_remote_file(ssh, remote_json_file_path, imported_json_file_path)
+        file_data = _read_file(imported_json_file_path)
         return _get_vnstat_obj_from_json(file_data)
 
     except exc.InternalError as e:

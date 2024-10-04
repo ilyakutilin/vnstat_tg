@@ -22,12 +22,17 @@ REMOTE_SYSTEM_NAME = os.getenv("REMOTE_SYSTEM_NAME", "remote")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-VPS_HOST = os.getenv("VPS_HOST")
-VPS_PORT = int(os.getenv("VPS_PORT", 22))
-VPS_USERNAME = os.getenv("VPS_USERNAME")
-VPS_JSON_FILE_PATH = os.getenv("VPS_JSON_FILE_PATH", "$HOME/vnstat.json")
-LOCAL_FILE_NAME = DATA_DIR / os.getenv("LOCAL_FILE_PATH", "vnstat_remote.json")
-VPS_SSH_KEY_PATH = os.getenv("VPS_SSH_KEY_PATH", "$HOME/.ssh/id_rsa")
+REMOTE_HOST = os.getenv("REMOTE_HOST")
+REMOTE_PORT = int(os.getenv("REMOTE_PORT", 22))
+REMOTE_USERNAME = os.getenv("REMOTE_USERNAME")
+SSH_KEY_PATH = os.getenv("SSH_KEY_PATH", "$HOME/.ssh/id_rsa")
+REMOTE_JSON_FILE_PATH = os.getenv("REMOTE_JSON_FILE_PATH", "$HOME/vnstat.json")
+IMPORTED_JSON_FILE_NAME = os.getenv(
+    "IMPORTED_JSON_FILE_NAME", "vnstat_remote.json"
+)
+LOCAL_JSON_FILE_NAME = DATA_DIR / os.getenv(
+    "LOCAL_JSON_FILE_NAME", "vnstat_remote.json"
+)
 
 LOG_DIR = BASE_DIR / os.getenv("LOG_DIR", "logs")
 LOG_FILE = LOG_DIR / os.getenv("LOG_FILE", "vnstat.log")

@@ -38,7 +38,7 @@ def bytes_to_gb(bytes_value: int | None = None, bold: bool = False) -> str:
 
 @log
 def save_vnstat_data_to_file(
-    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_FILE_NAME
+    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_JSON_FILE_NAME
 ):
     vn_dict = vnstat_data.__dict__
     vn_dict["stat_date"] = vn_dict["stat_date"].isoformat()
