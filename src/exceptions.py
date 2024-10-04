@@ -19,19 +19,15 @@ class InternalKeyError(InternalError):
     pass
 
 
-class MissingInterfacesError(InternalError):
+class MissingTargetDateError(InternalError):
     pass
 
 
-class MissingTrafficError(InternalError):
+class MissingLocalFileError(InternalError):
     pass
 
 
-class NoDayOrMonthError(InternalError):
-    pass
-
-
-class InvalidModifierError(InternalError):
+class JSONDecodeError(InternalError):
     pass
 
 
@@ -39,13 +35,24 @@ class TelegramError(InternalError):
     pass
 
 
+class SSHError(InternalError):
+    pass
+
+
+class SCPError(InternalError):
+    pass
+
+
 @log
-def handle_exception(exception: Exception, re_raise: bool = False) -> None:
+def handle_exception(
+    exception: Exception, re_raise: bool = True, send_tg: bool = True
+) -> None:
     from src.tg import send_telegram_message
 
     logger.exception(exception)
-    send_telegram_message(
-        f"An exception was raised in your vnstat monitor: {str(exception)}"
-    )
+    if send_tg:
+        send_telegram_message(
+            f"An exception was raised in your vnstat monitor: {str(exception)}"
+        )
     if re_raise:
         raise exception

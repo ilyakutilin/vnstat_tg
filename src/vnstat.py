@@ -3,195 +3,170 @@ import subprocess
 from datetime import date, timedelta
 from enum import Enum
 
+import jmespath as jm
+
 from src import exceptions as exc
-from src import utils
+from src import settings, utils
 from src.log import configure_logging, log
-from src.settings import settings
 
 logger = configure_logging(__name__)
 
 
 class Modifiers(Enum):
-    day = "d"
-    month = "m"
-
-    def __repr__(self):
-        return self.name
+    day = "day"
+    month = "month"
 
 
 class VnStatData:
     def __init__(
         self,
-        name: str,
-        day: date,
-        day_traffic: int,
-        month: dict[str, int],
-        month_traffic: int,
+        *,
+        service_name: str,
+        stat_date: date,
+        day_traffic: int | None = None,
+        month_traffic: int | None = None,
+        error: str | None = None,
     ) -> None:
-        self.name = name
-        self.day = day
+        self.name = service_name
+        self.stat_date = stat_date
         self.day_traffic = day_traffic
-        self.month = month
         self.month_traffic = month_traffic
+        self.error = error
 
     def __repr__(self) -> str:
         return (
-            f"<VnStatData(name={self.name}, day={self.day.isoformat()}, "
-            f"day_traffic={utils.bytes_to_gb(self.day_traffic)}, "
-            f"month={self.month['year']}-{self.month['month']}, "
-            f"month_traffic={utils.bytes_to_gb(self.month_traffic)})>"
+            f"<VnStatData(name='{self.name}', "
+            f"stat_date={self.stat_date.isoformat()}, "
+            f"day_traffic={self.day_traffic}, "
+            f"month_traffic={self.month_traffic}), "
+            f"error='{self.error}')>"
         )
 
 
 @log
-def _get_command(modifier: Modifiers, limit: int = 2) -> list[str]:
-    return ["vnstat", "--json", modifier.value, str(limit)]
-
-
-@log
-def _get_command_result(command: list[str]) -> dict | None:
+def _get_command_result(
+    command: list[str] = settings.COMMAND,
+) -> dict | None:
     try:
-        # Run vnstat to get the data in JSON format
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise exc.CommandError(f"vnstat command {command} failed")
-
-        # Parse the JSON output
-        data = json.loads(result.stdout)
-        return data
+        raw_json = subprocess.run(
+            command, capture_output=True, text=True, check=True
+        )
+        result = json.loads(raw_json.stdout.strip("\n"))
+    except subprocess.CalledProcessError as e:
+        stdout = (
+            f", stdout: `{e.stdout.strip()}`"
+            if e.stdout and e.stdout != e.output
+            else ""
+        )
+        stderr = f", stderr: `{e.stderr.strip()}`" if e.stderr else ""
+        raise exc.CommandError(
+            f"{settings.NO_DATA}: Error running command "
+            f"`{' '.join(e.cmd)}`: returncode: {e.returncode}, "
+            f"output: `{e.output.strip()}`{stdout}{stderr}"
+        )
+    except json.JSONDecodeError as e:
+        raise exc.JSONDecodeError(f"Failed to parse data: {e}")
     except Exception as e:
-        raise exc.FetchError(f"Failed to fetch vnstat data: {e}")
+        raise exc.FetchError(f"Failed to fetch data: {e}")
+    return result
 
 
 @log
-def __get_interface(
-    jsoned_interface_list: dict,
+def __get_interface_traffic_data(
+    vnstat_data: dict,
     target_interface: str = settings.INTERFACE_NAME,
 ) -> dict | None:
-    if not jsoned_interface_list:
-        raise exc.MissingInterfacesError(
-            "vnstat data does not contain interfaces"
-        )
-
-    for interface in jsoned_interface_list:
-        if interface.get("name") != target_interface:
-            continue
-        return interface
-
-    raise exc.MissingInterfacesError(
-        f"vnstat data does not contain interface {target_interface}"
+    return jm.search(
+        f"interfaces[?name=='{target_interface}'].traffic | [0]", vnstat_data
     )
 
 
 @log
-def _get_jsoned_traffic_list(
-    command_result: dict, target_interface: str = settings.INTERFACE_NAME
-) -> dict | None:
-    jsoned_inteface_list = utils.get_dict_value(command_result, "interfaces")
-    interface_data = __get_interface(jsoned_inteface_list, target_interface)
-
-    jsoned_traffic = utils.get_dict_value(interface_data, "traffic")
-    if "day" in jsoned_traffic:
-        return jsoned_traffic.get("day")
-    elif "month" in jsoned_traffic:
-        return jsoned_traffic.get("month")
-    else:
-        raise exc.NoDayOrMonthError(
-            "vnstat data does not contain traffic "
-            f"for interface {target_interface}"
+def __get_traffic_value(
+    interface_traffic_data: dict | None, modifier: Modifiers, target_date: date
+) -> int | None:
+    day_part = (
+        f" && date.day==`{target_date.day}`"
+        if modifier == Modifiers.day
+        else ""
+    )
+    rx_tx: list | None = jm.search(
+        f"{modifier.value}[?date.year==`{target_date.year}` "
+        f"&& date.month==`{target_date.month}`{day_part}].[rx, tx] | [0]",
+        interface_traffic_data,
+    )
+    if interface_traffic_data and not rx_tx:
+        latest_date: list[int | None] = jm.search(
+            f"{modifier.value}[-1].date.[year, month, day]",
+            interface_traffic_data,
+        )
+        date_obj = (
+            date(*latest_date)
+            if latest_date[-1]
+            else utils.get_month_date_object(*latest_date[:-1])
+        )
+        slicer = (
+            -3 if modifier == Modifiers.month else len(date_obj.isoformat())
         )
 
-
-@log
-def __validate_and_get_day(
-    jsoned_traffic_date: dict, target_date: date = date.today()
-) -> tuple[bool, date]:
-    dt_date = date(
-        year=utils.get_dict_value(jsoned_traffic_date, "year"),
-        month=utils.get_dict_value(jsoned_traffic_date, "month"),
-        day=utils.get_dict_value(jsoned_traffic_date, "day"),
-    )
-    return dt_date == target_date - timedelta(days=1), dt_date
-
-
-@log
-def __validate_and_get_month(
-    jsoned_traffic_date: dict, target_date: date = date.today()
-) -> tuple[bool, dict]:
-    date_ = {
-        "year": utils.get_dict_value(jsoned_traffic_date, "year"),
-        "month": utils.get_dict_value(jsoned_traffic_date, "month"),
-    }
-    current_day = target_date.day
-    if current_day != 1:
-        return date_["month"] == target_date.month, date_
-    current_month = target_date.month
-    previous_month = 12 if current_month == 1 else current_month - 1
-    return date_["month"] == previous_month, date_
-
-
-@log
-def __sum_traffic(traffic_element: dict) -> int:
-    rx = utils.get_dict_value(traffic_element, "rx")
-    tx = utils.get_dict_value(traffic_element, "tx")
-    return rx + tx
-
-
-@log
-def _get_traffic_for_correct_period(
-    jsoned_traffic_list: dict,
-    day_or_month: Modifiers,
-    target_date: date = date.today(),
-) -> tuple[int | None, date | dict[str, int]] | None:
-    for element in jsoned_traffic_list:
-        jsoned_traffic_date = utils.get_dict_value(element, "date")
-        if day_or_month == Modifiers.day:
-            is_valid, period = __validate_and_get_day(
-                jsoned_traffic_date, target_date
-            )
-        elif day_or_month == Modifiers.month:
-            is_valid, period = __validate_and_get_month(
-                jsoned_traffic_date, target_date
-            )
-        else:
-            raise exc.InvalidModifierError(
-                f"Only {Modifiers.day.value} and {Modifiers.month.value} "
-                "are supported"
-            )
-        if is_valid:
-            return __sum_traffic(element), period
-
-    return None, target_date - timedelta(days=1)
+        raise exc.MissingTargetDateError(
+            f"Target date {target_date} not found in traffic data. "
+            f"Latest available {modifier.value} is "
+            f"{date_obj.isoformat()[:slicer]}. "
+            "Please check if the vnstat service is running."
+        )
+    return sum(rx_tx) if rx_tx else None
 
 
 @log
 def _get_traffic_in_bytes(
-    day_or_month: Modifiers, target_date: date = date.today()
-) -> tuple[int | None, date | dict[str, int]] | None:
-    day_command = _get_command(day_or_month)
-    day_command_result = _get_command_result(day_command)
-    jsoned_traffic_list = _get_jsoned_traffic_list(day_command_result)
-    return _get_traffic_for_correct_period(
-        jsoned_traffic_list, day_or_month, target_date
+    vnstat_data: dict, target_date: date
+) -> tuple[int | None, int | None]:
+    interface_traffic_data = __get_interface_traffic_data(vnstat_data)
+    return tuple(
+        [
+            __get_traffic_value(interface_traffic_data, modifier, target_date)
+            for modifier in Modifiers
+        ]
     )
 
 
 @log
 def get_traffic_data(
-    service_name: str, target_date: date = date.today()
+    service_name: str, target_date: date = date.today() - timedelta(days=1)
 ) -> VnStatData | None:
     try:
-        day_traffic, day = _get_traffic_in_bytes(Modifiers.day, target_date)
-        month_traffic, month = _get_traffic_in_bytes(
-            Modifiers.month, target_date
+        vnstat_data = _get_command_result()
+        day_traffic, month_traffic = _get_traffic_in_bytes(
+            vnstat_data, target_date
         )
     except exc.InternalError as e:
-        raise e
+        return VnStatData(
+            service_name=service_name,
+            stat_date=target_date,
+            error=str(e),
+        )
 
     return VnStatData(
-        name=service_name,
-        day=day,
+        service_name=service_name,
+        stat_date=target_date,
         day_traffic=day_traffic,
-        month=month,
         month_traffic=month_traffic,
     )
+
+
+vn_sim = VnStatData(
+    service_name="local",
+    stat_date=date.today() - timedelta(days=1),
+    day_traffic=1000000000,
+    month_traffic=2000000000,
+)
+
+vn_sim_error = VnStatData(
+    service_name="remote",
+    stat_date=date.today() - timedelta(days=1),
+    error="Simulated error",
+)
+
+if __name__ == "__main__":
+    print(get_traffic_data("local", date.today() - timedelta(days=3)))

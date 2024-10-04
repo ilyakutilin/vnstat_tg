@@ -2,7 +2,7 @@ import functools
 import logging
 from logging.handlers import RotatingFileHandler
 
-from src.settings import settings
+from src import settings
 
 
 def configure_logging(name: str, level: int = logging.DEBUG) -> logging.Logger:
