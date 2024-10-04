@@ -15,11 +15,14 @@ logger = configure_logging(__name__)
 
 @log
 def get_msg_for_service(vn_obj: VnStatData) -> str:
+    service_status = (
+        f"{vn_obj.service_status}\n" if vn_obj.service_status else ""
+    )
     day_traffic = utils.bytes_to_gb(vn_obj.day_traffic)
     month_traffic = utils.bytes_to_gb(vn_obj.month_traffic)
     error = f"\n<b>Error</b>: {vn_obj.error}" if vn_obj.error else ""
     return (
-        f"<b>{vn_obj.name}</b>:\n"
+        f"<b>{vn_obj.system_name}</b>:\n{service_status}"
         f"Yesterday, {vn_obj.stat_date.strftime('%A, %d %B %Y')}:\n"
         f"{day_traffic}\n"
         f"Cumulative for {vn_obj.stat_date.strftime('%B %Y')}:\n"

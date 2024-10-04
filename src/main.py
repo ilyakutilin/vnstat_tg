@@ -23,7 +23,7 @@ def main():  # noqa: C901
     # Get the vnstat data from a local machine
     try:
         local: vnstat.VnStatData = vnstat.get_traffic_data(
-            settings.LOCAL_SERVICE_NAME
+            settings.LOCAL_SYSTEM_NAME
         )
     except Exception as e:
         exc.handle_exception(e)

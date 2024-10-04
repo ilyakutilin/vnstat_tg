@@ -60,7 +60,7 @@ def _read_file(local_file_path: str | Path) -> str | None:
 @log
 def _get_vnstat_obj_from_json(file_data: str):
     data_dict = json.loads(file_data)
-    data_dict["service_name"] = settings.REMOTE_SERVICE_NAME
+    data_dict["system_name"] = settings.REMOTE_SYSTEM_NAME
     data_dict["stat_date"] = date.fromisoformat(data_dict["stat_date"])
     return VnStatData(**data_dict)
 
@@ -83,7 +83,7 @@ def get_remote_vnstat_data(
 
     except exc.InternalError as e:
         return VnStatData(
-            service_name=settings.REMOTE_SERVICE_NAME,
+            system_name=settings.REMOTE_SYSTEM_NAME,
             stat_date=date.today() - timedelta(days=1),
             error=str(e),
         )

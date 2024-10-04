@@ -16,8 +16,8 @@ NO_DATA = "No data"
 COMMAND = ["vnstat", "--json", "a", "2"]
 
 INTERFACE_NAME = os.getenv("INTERFACE_NAME", "eth0")
-LOCAL_SERVICE_NAME = os.getenv("LOCAL_SERVICE_NAME", "local")
-REMOTE_SERVICE_NAME = os.getenv("REMOTE_SERVICE_NAME", "remote")
+LOCAL_SYSTEM_NAME = os.getenv("LOCAL_SYSTEM_NAME", "local")
+REMOTE_SYSTEM_NAME = os.getenv("REMOTE_SYSTEM_NAME", "remote")
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")

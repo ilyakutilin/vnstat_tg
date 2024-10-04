@@ -8,6 +8,7 @@ import jmespath as jm
 from src import exceptions as exc
 from src import settings, utils
 from src.log import configure_logging, log
+from src.systemctl import get_service_status
 
 logger = configure_logging(__name__)
 
@@ -21,24 +22,37 @@ class VnStatData:
     def __init__(
         self,
         *,
-        service_name: str,
+        system_name: str,
+        service_status: str | None = None,
         stat_date: date,
         day_traffic: int | None = None,
         month_traffic: int | None = None,
         error: str | None = None,
     ) -> None:
-        self.name = service_name
+        self.system_name = system_name
+        self.service_status = service_status
         self.stat_date = stat_date
         self.day_traffic = day_traffic
         self.month_traffic = month_traffic
         self.error = error
 
     def __repr__(self) -> str:
+        day_traffic = (
+            f"{self.day_traffic:,}".replace(",", " ")
+            if self.day_traffic
+            else None
+        )
+        month_traffic = (
+            f"{self.month_traffic:,}".replace(",", " ")
+            if self.month_traffic
+            else None
+        )
         return (
-            f"<VnStatData(name='{self.name}', "
+            f"<VnStatData(system_name='{self.system_name}', "
+            f"service_status='{self.service_status}', "
             f"stat_date={self.stat_date.isoformat()}, "
-            f"day_traffic={self.day_traffic}, "
-            f"month_traffic={self.month_traffic}), "
+            f"day_traffic={day_traffic}, "
+            f"month_traffic={month_traffic}, "
             f"error='{self.error}')>"
         )
 
@@ -133,22 +147,25 @@ def _get_traffic_in_bytes(
 
 @log
 def get_traffic_data(
-    service_name: str, target_date: date = date.today() - timedelta(days=1)
+    system_name: str, target_date: date = date.today() - timedelta(days=1)
 ) -> VnStatData | None:
     try:
+        service_status = get_service_status()
         vnstat_data = _get_command_result()
         day_traffic, month_traffic = _get_traffic_in_bytes(
             vnstat_data, target_date
         )
     except exc.InternalError as e:
         return VnStatData(
-            service_name=service_name,
+            system_name=system_name,
+            service_status=service_status,
             stat_date=target_date,
             error=str(e),
         )
 
     return VnStatData(
-        service_name=service_name,
+        system_name=system_name,
+        service_status=service_status,
         stat_date=target_date,
         day_traffic=day_traffic,
         month_traffic=month_traffic,
@@ -156,17 +173,19 @@ def get_traffic_data(
 
 
 vn_sim = VnStatData(
-    service_name="local",
+    system_name="local",
+    service_status="Vnstat service status: active",
     stat_date=date.today() - timedelta(days=1),
     day_traffic=1000000000,
     month_traffic=2000000000,
 )
 
 vn_sim_error = VnStatData(
-    service_name="remote",
+    system_name="remote",
+    service_status="Vnstat service status: seems to be inactive",
     stat_date=date.today() - timedelta(days=1),
     error="Simulated error",
 )
 
 if __name__ == "__main__":
-    print(get_traffic_data("local", date.today() - timedelta(days=3)))
+    print(get_traffic_data("local", date.today() - timedelta(days=5)))
