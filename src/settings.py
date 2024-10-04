@@ -27,7 +27,7 @@ REMOTE_PORT = int(os.getenv("REMOTE_PORT", 22))
 REMOTE_USERNAME = os.getenv("REMOTE_USERNAME")
 SSH_KEY_PATH = os.getenv("SSH_KEY_PATH", "$HOME/.ssh/id_rsa")
 REMOTE_JSON_FILE_PATH = os.getenv("REMOTE_JSON_FILE_PATH", "$HOME/vnstat.json")
-IMPORTED_JSON_FILE_NAME = os.getenv(
+IMPORTED_JSON_FILE_NAME = DATA_DIR / os.getenv(
     "IMPORTED_JSON_FILE_NAME", "vnstat_remote.json"
 )
 LOCAL_JSON_FILE_NAME = DATA_DIR / os.getenv(
