@@ -15,6 +15,7 @@ logger = configure_logging(__name__)
 
 @log
 def get_msg_for_service(vn_obj: VnStatData) -> str:
+    """Gets the message for a particular service (system)."""
     service_status = (
         f"{vn_obj.service_status}\n" if vn_obj.service_status else ""
     )
@@ -32,6 +33,7 @@ def get_msg_for_service(vn_obj: VnStatData) -> str:
 
 @log
 def get_final_msg(*vnstat_objects: VnStatData) -> str:
+    """Gets the final combined message for all systems ready to be sent."""
     message = ""
     day_traffic = 0
     month_traffic = 0
@@ -56,6 +58,7 @@ def send_telegram_message(
     telegram_bot_token: str = settings.TELEGRAM_BOT_TOKEN,
     telegram_chat_id: str = settings.TELEGRAM_CHAT_ID,
 ) -> None:
+    """Sends a Telegram message."""
 
     url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
     payload = {
@@ -65,12 +68,13 @@ def send_telegram_message(
     }
 
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=10)
         if response.status_code == HTTPStatus.OK:
             logger.info("Message sent successfully.")
         else:
             logger.error(
-                f"Failed to send message. Status code: {response.status_code}"
+                "Failed to send message. Status code: %s",
+                response.status_code,
             )
     except Exception as e:
         raise exc.TelegramError(f"Error sending Telegram message: {e}")

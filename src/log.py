@@ -27,6 +27,8 @@ def configure_logging(name: str, level: int = logging.DEBUG) -> logging.Logger:
 
 
 def log(_func=None, *, my_logger: logging.Logger = None):
+    """Decorator for logging function calls."""
+
     def decorator_log(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -38,15 +40,15 @@ def log(_func=None, *, my_logger: logging.Logger = None):
             kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
             signature = ", ".join(args_repr + kwargs_repr)
             logger.debug(
-                f"function {func.__name__} called with args {signature}"
+                "function %s called with args %s", func.__name__, signature
             )
             try:
                 result = func(*args, **kwargs)
-                logger.debug(f"function {func.__name__} returned {result}")
+                logger.debug("function %s returned %s", func.__name__, result)
                 return result
             except Exception as e:
                 logger.exception(
-                    f"Exception raised in {func.__name__}. exception: {str(e)}"
+                    "Exception raised in %s. exception: %s", func.__name__, e
                 )
                 raise e
 

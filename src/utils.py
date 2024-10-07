@@ -2,10 +2,9 @@ import calendar
 import json
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from src import settings
-from src.exceptions import InternalKeyError
 from src.log import configure_logging, log
 
 if TYPE_CHECKING:
@@ -15,17 +14,8 @@ logger = configure_logging(__name__)
 
 
 @log
-def get_dict_value(dict_: dict, key: str):
-    try:
-        return dict_[key]
-    except KeyError:
-        message = f"KeyError: no key {key} in dict {dict_}"
-        logger.error(message)
-        raise InternalKeyError(message)
-
-
-@log
-def bytes_to_gb(bytes_value: int | None = None, bold: bool = False) -> str:
+def bytes_to_gb(bytes_value: Optional[int] = None, bold: bool = False) -> str:
+    """Converts bytes to gigabytes."""
     if not bytes_value:
         return "No data"
     gb_value = bytes_value / (1024**3)
@@ -38,17 +28,19 @@ def bytes_to_gb(bytes_value: int | None = None, bold: bool = False) -> str:
 
 @log
 def save_vnstat_data_to_file(
-    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_FILE_NAME
+    vnstat_data: "VnStatData", file_path: Path = settings.LOCAL_JSON_FILE_NAME
 ):
+    """Save VnStat data to file."""
     vn_dict = vnstat_data.__dict__
     vn_dict["stat_date"] = vn_dict["stat_date"].isoformat()
     vn_json = json.dumps(vn_dict)
-    with open(file_path, "w") as file:
+    with open(file_path, "w", encoding="utf-8") as file:
         file.write(vn_json)
 
 
 @log
 def get_month_date_object(year: int, month: int) -> date:
+    """Gets the date object from year and month."""
     last_day = calendar.monthrange(year, month)[1]
     return date(year, month, last_day)
 

@@ -1,7 +1,9 @@
 import json
 import subprocess
+from collections.abc import Generator
 from datetime import date, timedelta
 from enum import Enum
+from typing import Optional
 
 import jmespath as jm
 
@@ -14,20 +16,24 @@ logger = configure_logging(__name__)
 
 
 class Modifiers(Enum):
-    day = "day"
-    month = "month"
+    """Modifiers for day and month."""
+
+    DAY = "day"
+    MONTH = "month"
 
 
 class VnStatData:
+    """VnStat data object."""
+
     def __init__(
         self,
         *,
         system_name: str,
-        service_status: str | None = None,
+        service_status: Optional[str] = None,
         stat_date: date,
-        day_traffic: int | None = None,
-        month_traffic: int | None = None,
-        error: str | None = None,
+        day_traffic: Optional[int] = None,
+        month_traffic: Optional[int] = None,
+        error: Optional[str] = None,
     ) -> None:
         self.system_name = system_name
         self.service_status = service_status
@@ -60,7 +66,7 @@ class VnStatData:
 @log
 def _get_command_result(
     command: list[str] = settings.COMMAND,
-) -> dict | None:
+) -> Optional[dict]:
     try:
         raw_json = subprocess.run(
             command, capture_output=True, text=True, check=True
@@ -89,7 +95,7 @@ def _get_command_result(
 def __get_interface_traffic_data(
     vnstat_data: dict,
     target_interface: str = settings.INTERFACE_NAME,
-) -> dict | None:
+) -> Optional[dict]:
     return jm.search(
         f"interfaces[?name=='{target_interface}'].traffic | [0]", vnstat_data
     )
@@ -97,20 +103,22 @@ def __get_interface_traffic_data(
 
 @log
 def __get_traffic_value(
-    interface_traffic_data: dict | None, modifier: Modifiers, target_date: date
-) -> int | None:
+    interface_traffic_data: Optional[dict],
+    modifier: Modifiers,
+    target_date: date,
+) -> Optional[int]:
     day_part = (
         f" && date.day==`{target_date.day}`"
-        if modifier == Modifiers.day
+        if modifier == Modifiers.DAY
         else ""
     )
-    rx_tx: list | None = jm.search(
+    rx_tx: Optional[list] = jm.search(
         f"{modifier.value}[?date.year==`{target_date.year}` "
         f"&& date.month==`{target_date.month}`{day_part}].[rx, tx] | [0]",
         interface_traffic_data,
     )
     if interface_traffic_data and not rx_tx:
-        latest_date: list[int | None] = jm.search(
+        latest_date: list[Optional[int]] = jm.search(
             f"{modifier.value}[-1].date.[year, month, day]",
             interface_traffic_data,
         )
@@ -120,7 +128,7 @@ def __get_traffic_value(
             else utils.get_month_date_object(*latest_date[:-1])
         )
         slicer = (
-            -3 if modifier == Modifiers.month else len(date_obj.isoformat())
+            -3 if modifier == Modifiers.MONTH else len(date_obj.isoformat())
         )
 
         raise exc.MissingTargetDateError(
@@ -135,20 +143,19 @@ def __get_traffic_value(
 @log
 def _get_traffic_in_bytes(
     vnstat_data: dict, target_date: date
-) -> tuple[int | None, int | None]:
+) -> Generator[Optional[int], Optional[int]]:
     interface_traffic_data = __get_interface_traffic_data(vnstat_data)
-    return tuple(
-        [
-            __get_traffic_value(interface_traffic_data, modifier, target_date)
-            for modifier in Modifiers
-        ]
+    return (
+        __get_traffic_value(interface_traffic_data, modifier, target_date)
+        for modifier in Modifiers
     )
 
 
 @log
 def get_traffic_data(
     system_name: str, target_date: date = date.today() - timedelta(days=1)
-) -> VnStatData | None:
+) -> Optional[VnStatData]:
+    """Get traffic data from vnstat."""
     try:
         service_status = get_service_status()
         vnstat_data = _get_command_result()
@@ -158,7 +165,7 @@ def get_traffic_data(
     except exc.InternalError as e:
         return VnStatData(
             system_name=system_name,
-            service_status=service_status,
+            service_status=None,
             stat_date=target_date,
             error=str(e),
         )
@@ -188,4 +195,4 @@ vn_sim_error = VnStatData(
 )
 
 if __name__ == "__main__":
-    print(get_traffic_data("local", date.today() - timedelta(days=5)))
+    print(get_traffic_data("local", date.today() - timedelta(days=1)))

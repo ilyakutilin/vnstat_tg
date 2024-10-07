@@ -9,6 +9,7 @@ filelock==3.16.1
 identify==2.6.1
 idna==3.10
 iniconfig==2.0.0
+jmespath==1.0.1
 nodeenv==1.9.1
 packaging==24.1
 paramiko==3.5.0
