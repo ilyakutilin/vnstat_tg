@@ -1,6 +1,7 @@
 import json
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Optional, Union
 
 import paramiko
 from scp import SCPClient, SCPException
@@ -16,8 +17,8 @@ def _connect_to_ssh(
     remote_host: str,
     remote_port: int,
     username: str,
-    ssh_key_path: str | Path,
-) -> paramiko.SSHClient | None:
+    ssh_key_path: Union[str, Path],
+) -> Optional[paramiko.SSHClient]:
     try:
         ssh = paramiko.SSHClient()
         ssh.load_system_host_keys()
@@ -35,8 +36,8 @@ def _connect_to_ssh(
 @log
 def _scp_remote_file(
     ssh: paramiko.SSHClient,
-    json_file_path: str | Path,
-    local_file_path: str | Path,
+    json_file_path: Union[str, Path],
+    local_file_path: Union[str, Path],
 ) -> None:
     try:
         with SCPClient(ssh.get_transport()) as scp:
@@ -46,9 +47,9 @@ def _scp_remote_file(
 
 
 @log
-def _read_file(local_file_path: str | Path) -> str | None:
+def _read_file(local_file_path: Union[str, Path]) -> Optional[str]:
     try:
-        with open(local_file_path, "r") as file:
+        with open(local_file_path, "r", encoding="utf-8") as file:
             return file.read()
     except FileNotFoundError as e:
         raise exc.MissingLocalFileError(
@@ -67,13 +68,17 @@ def _get_vnstat_obj_from_json(file_data: str):
 
 @log
 def get_remote_vnstat_data(
+    *,
     remote_host: str = settings.REMOTE_HOST,
     remote_port: int = settings.REMOTE_PORT,
     username: str = settings.REMOTE_USERNAME,
-    remote_json_file_path: str | Path = settings.REMOTE_JSON_FILE_PATH,
-    imported_json_file_path: str | Path = settings.IMPORTED_JSON_FILE_NAME,
-    ssh_key_path: str | Path = settings.SSH_KEY_PATH,
-) -> VnStatData | None:
+    remote_json_file_path: Union[str, Path] = settings.REMOTE_JSON_FILE_PATH,
+    imported_json_file_path: Union[
+        str, Path
+    ] = settings.IMPORTED_JSON_FILE_NAME,
+    ssh_key_path: Union[str, Path] = settings.SSH_KEY_PATH,
+) -> Optional[VnStatData]:
+    """Gets the Vnstat data from the file on the remote server."""
 
     try:
         ssh = _connect_to_ssh(remote_host, remote_port, username, ssh_key_path)

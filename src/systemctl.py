@@ -3,6 +3,7 @@ import keyword
 import re
 import subprocess
 from datetime import datetime
+from typing import Optional
 
 from src.log import log
 
@@ -27,6 +28,8 @@ ERROR_OUTPUT_LIMIT = 100
 
 
 class SystemctlStatus:
+    """Systemctl status object."""
+
     def __init__(self, param_list):
         for param in param_list:
             key, value = param.split("=", 1)
@@ -41,18 +44,22 @@ class SystemctlStatus:
             setattr(self, key, value if value else None)
 
     def pascal_to_snake_case(self, name):
+        """Convert PascalCase to snake_case."""
         return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
     def is_keyword_or_builtin(self, word):
+        """Check if word is a keyword or builtin."""
         return keyword.iskeyword(word) or word in dir(builtins)
 
     def parse_timestamp(self, timestamp_str):
+        """Parse timestamp string."""
         try:
             return datetime.strptime(timestamp_str, "%a %Y-%m-%d %H:%M:%S %Z")
         except ValueError:
             return None
 
     def format_value(self, value):
+        """Format timestamp value."""
         if isinstance(value, datetime):
             return value.strftime("%Y-%m-%d %H:%M:%S")
         return repr(value)
@@ -67,6 +74,7 @@ class SystemctlStatus:
 
 @log
 def _parse_status(status: SystemctlStatus) -> str:
+
     try:
         if status.active_state == "active" and status.active_enter_timestamp:
             formatted_time = status.active_enter_timestamp.strftime(
@@ -93,9 +101,12 @@ def _parse_status(status: SystemctlStatus) -> str:
 
 
 @log
-def get_service_status() -> str | None:
+def get_service_status() -> Optional[str]:
+    """Fetch the status of the VnStat service."""
     try:
-        res = subprocess.run(COMMAND, capture_output=True, text=True)
+        res = subprocess.run(
+            COMMAND, capture_output=True, text=True, check=False
+        )
     except Exception as e:
         return (
             "vnstat.service: an error occurred while trying "

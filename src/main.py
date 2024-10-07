@@ -19,44 +19,66 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def main():  # noqa: C901
-    # Get the vnstat data from a local machine
+def get_local_vnstat_data():
+    """Gets the local VnStat data."""
     try:
-        local: vnstat.VnStatData = vnstat.get_traffic_data(
-            settings.LOCAL_SYSTEM_NAME
-        )
+        return vnstat.get_traffic_data(settings.LOCAL_SYSTEM_NAME)
+    except Exception as e:
+        exc.handle_exception(e)
+        return None
+
+
+def save_data_to_file(local):
+    """Saves the local VnStat data to a file."""
+    try:
+        utils.save_vnstat_data_to_file(local)
     except Exception as e:
         exc.handle_exception(e)
 
-    # If all that's required is to save local data to a file
-    if args.save_to_file:
-        try:
-            utils.save_vnstat_data_to_file(local)
-            return
-        except Exception as e:
-            exc.handle_exception(e)
 
-    # If local data is enough
-    if args.no_collect:
-        try:
-            msg = tg.get_final_msg(local)
-        except Exception as e:
-            exc.handle_exception(e)
-    # If remote data needs to be collected
-    else:
-        try:
-            remote = ssh.get_remote_vnstat_data()
-            msg = tg.get_final_msg(local, remote)
-        except Exception as e:
-            exc.handle_exception(e)
+def generate_local_msg(local):
+    """Generates the VnStat message only for the local machine."""
+    try:
+        return tg.get_final_msg(local)
+    except Exception as e:
+        exc.handle_exception(e)
+        return None
 
-    # Send the message
+
+def generate_combined_msg(local):
+    """Generates the VnStat message for both local and remote machines."""
+    try:
+        remote = ssh.get_remote_vnstat_data()
+        return tg.get_final_msg(local, remote)
+    except Exception as e:
+        exc.handle_exception(e)
+        return None
+
+
+def send_telegram_msg(msg):
+    """Sends the VnStat message to Telegram."""
     try:
         tg.send_telegram_message(msg)
     except exc.TelegramError as e:
         exc.handle_exception(e, send_tg=False)
     except Exception as e:
         exc.handle_exception(e, send_tg=False)
+
+
+def main():
+    """Main function."""
+    local = get_local_vnstat_data()
+
+    if args.save_to_file:
+        save_data_to_file(local)
+        return
+
+    if args.no_collect:
+        msg = generate_local_msg(local)
+    else:
+        msg = generate_combined_msg(local)
+
+    send_telegram_msg(msg)
 
 
 if __name__ == "__main__":

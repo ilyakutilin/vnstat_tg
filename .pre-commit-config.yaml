@@ -2,9 +2,11 @@ repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
       rev: v4.4.0
       hooks:
+          - id: check-added-large-files
           - id: check-yaml
           - id: debug-statements
           - id: end-of-file-fixer
+          - id: requirements-txt-fixer
           - id: trailing-whitespace
           - id: check-merge-conflict
 
@@ -12,33 +14,22 @@ repos:
       rev: 5.12.0
       hooks:
           - id: isort
-            args:
-                [
-                    '--profile',
-                    'black',
-                    '--filter-files',
-                    --skip=migrations,
-                    --line-length=79,
+            args: ['--profile', 'black', '--filter-files', --line-length=79]
+
+    - repo: https://github.com/pycqa/pylint
+      rev: v3.3.1
+      hooks:
+          - id: pylint
+            name: pylint
+            entry: pylint
+            types: [python]
+            args: [
+                    '-rn', # Only display messages
+                    '-sn', # Don't display the score
+                    '--rcfile=.pylintrc', # Link to your config file
+                    '--py-version=3.9',
                 ]
-
-    - repo: https://github.com/pre-commit/mirrors-autopep8
-      rev: v2.0.4
-      hooks:
-          - id: autopep8
-
-    - repo: https://github.com/myint/autoflake
-      rev: v2.2.1
-      hooks:
-          - id: autoflake
-            args: [--remove-all-unused-imports, --remove-unused-variables]
-
-    - repo: https://github.com/PyCQA/flake8
-      rev: 6.1.0
-      hooks:
-          - id: flake8
-            # additional_dependencies:
-            #     - flake8-docstrings
-            args: [--config=.flake8]
+            exclude: 'tests/'
 
     - repo: https://github.com/psf/black-pre-commit-mirror
       rev: 24.2.0
