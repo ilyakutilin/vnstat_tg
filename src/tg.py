@@ -17,17 +17,17 @@ logger = configure_logging(__name__)
 def get_msg_for_service(vn_obj: VnStatData) -> str:
     """Gets the message for a particular service (system)."""
     service_status = (
-        f"{vn_obj.service_status}\n" if vn_obj.service_status else ""
+        f"{vn_obj.service_status}\n\n" if vn_obj.service_status else ""
     )
-    day_traffic = utils.bytes_to_gb(vn_obj.day_traffic)
-    month_traffic = utils.bytes_to_gb(vn_obj.month_traffic)
-    error = f"\n<b>Error</b>: {vn_obj.error}" if vn_obj.error else ""
+    day_traffic = utils.bytes_to_gb(vn_obj.day_traffic, bold=True)
+    month_traffic = utils.bytes_to_gb(vn_obj.month_traffic, bold=True)
+    error = f"\n\n<b>Error</b>: {vn_obj.error}" if vn_obj.error else ""
     return (
-        f"<b>{vn_obj.system_name}</b>:\n{service_status}"
+        f"<b>{vn_obj.system_name.upper()}</b>:\n\n{service_status}"
         f"Yesterday, {vn_obj.stat_date.strftime('%A, %d %B %Y')}:\n"
-        f"{day_traffic}\n"
+        f"{day_traffic}\n\n"
         f"Cumulative for {vn_obj.stat_date.strftime('%B %Y')}:\n"
-        f"{month_traffic}{error}\n\n"
+        f"{month_traffic}{error}\n\n====================\n\n"
     )
 
 
@@ -45,7 +45,7 @@ def get_final_msg(*vnstat_objects: VnStatData) -> str:
             month_traffic += vn_obj.month_traffic
 
     message += (
-        "<b>Total for all services</b>:\n"
+        "<b>TOTAL FOR ALL SERVICES</b>:\n"
         f"Yesterday: {utils.bytes_to_gb(day_traffic, bold=True)}\n"
         f"Cumulative: {utils.bytes_to_gb(month_traffic, bold=True)}\n\n"
     )
