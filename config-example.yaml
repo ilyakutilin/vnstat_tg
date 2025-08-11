@@ -1,0 +1,32 @@
+local:
+  system_name: local
+  interface_name: eth0
+  data_file_name: vnstat.json
+
+remotes:
+  - name: remote_one
+    host: 123.231.210.10
+    port: 22
+    username: username
+    ssh_key_path: ~/.ssh/id_rsa
+    data_file_path: ~/vnstat.json
+
+  - name: remote_two
+    host: 223.221.220.20
+    port: 40022
+    username: somename
+    password: secretpassword
+    data_file_path: ~/vnstat.json
+
+telegram:
+  bot_token: tg_token
+  chat_id: tg_chat_id
+
+logging:
+  log_dir: logs
+  log_file: vnstat.log
+  log_file_size: 1048576
+  log_files_to_keep: 5
+  log_format: '%(asctime)s - %(levelname)s - %(message)s'
+  log_dt_fmt: '%Y-%m-%d %H:%M:%S'
+  log_file_level: INFO
