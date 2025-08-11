@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import paramiko
+from paramiko.ssh_exception import NoValidConnectionsError
 from scp import SCPClient, SCPException
 
 from src import exceptions as exc
@@ -29,7 +30,7 @@ def _connect_to_ssh(
             remote_host, port=remote_port, username=username, pkey=private_key
         )
         return ssh
-    except paramiko.SSHException as e:
+    except (paramiko.SSHException, NoValidConnectionsError) as e:
         raise exc.SSHError(f"Failed to SSH to {remote_host}: {e}")
 
 
